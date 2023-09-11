@@ -1,0 +1,191 @@
+---
+layout: default
+containerClass: container-fluid
+enableTooltips: true
+---
+{% assign version_stripped = page.version | replace:'.','' %}
+
+<div class="row">
+    <div class="col-3">
+        <div style="max-height: 100vh; position:sticky; top: 1rem; overflow: auto" id="sideNav">
+        <nav  class="navbar navbar-light bg-light flex-column align-items-stretch p-3">
+            <nav class="nav nav-pills flex-column">
+                <a class="nav-link" href="#methods">Methods</a>
+                <a class="nav-link" href="#tables">Table Types</a>
+                <a class="nav-link" href="#enums">Fixed String Values</a>
+                <!--<nav class="nav nav-pills flex-column">
+                    {%- for holder_hash in site.data.computer[version_stripped].methods -%}
+                    <a href="#{{holder_hash[0] | slugify }}" class="nav-link ms-3 my-1">{{holder_hash[0]}}</a>
+                    {%- endfor -%}
+                </nav>-->
+            </nav>
+        </nav>
+        </div>
+    </div>
+    <div class="col-9">
+        <h1>Computer Methods for Mekanism {{page.version}}</h1>
+        <h2 id="methods" class="mb-3">Methods</h2>
+        {%- for holder_hash in page.methods -%}
+        {% assign holder = holder_hash[0] %}
+        {% assign methods = holder_hash[1] %}
+        <div class="card mb-5">
+            <div id="{{holder | slugify }}" class="card-header">
+                <strong>{{holder}}</strong>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped table-hover mb-1">
+                    <colgroup>
+                        <col style="width: 30%">
+                        <col style="width: 20%">
+                        <col style="width: 20%">
+                        <col style="width: 30%">
+                    </colgroup>
+                    <thead>
+                    <tr>
+                        <th scope="col">Method Name</th>
+                        <th scope="col">Params</th>
+                        <th scope="col">Returns</th>
+                        <th scope="col">Description</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+            {%- for method in methods -%}
+            {% capture method_id %}{{holder | slugify }}-{{method.methodName | slugify}}{% if method.params %}-{{method.params.size}}{% endif %}{% endcapture %}
+            <tr id="{{method_id}}">
+                <td>
+                    <code>{{method.methodName}}</code>
+                </td>
+                <td>
+                {% if method.params %}
+                    <dl>
+                        {% for param in method.params %}
+                        <dt><code>{{param.name}}</code></dt>
+                        <dd>{% include computer_type_link.html subject=param enums=page.enums tables=page.builtInTables %}</dd>
+                        {% endfor %}
+                    </dl>
+                {% endif %}
+                </td>
+                <td>
+                    {% if method.returns %}
+                    {% include computer_type_link.html subject=method.returns enums=page.enums tables=page.builtInTables %}
+                    {% endif %}
+                </td>
+                <td>
+                    {{method.description | newline_to_br}}
+                    {% if method.requiresPublicSecurity %}<br><span class="badge bg-warning text-dark">Requires public security</span>{% endif %}
+                </td>
+            </tr>
+            {%- endfor -%}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {%- endfor -%}
+
+        <h2 id="tables" class="mb-3">Table Types</h2>
+        <div class="">
+            {% assign tablelist = "" %}
+            {%- for table_hash in page.builtInTables -%}
+            {% assign table = table_hash[0] %}
+            {% capture shortname %}{{table | split:"."|last|split:'$'|last}}{% endcapture %}
+            {% capture tablelist %}{% unless forloop.first %}{{ tablelist }}|{% endunless %}{{ shortname }}:{{ table }}{% endcapture %}
+            {%- endfor -%}
+            {% assign tablelist = tablelist | split:'|' | sort %}
+
+            {% for short_colon_full in tablelist %}
+            {% assign builtin_hash = short_colon_full | split:':' %}
+            {% assign holder = builtin_hash[1] %}
+            {% assign short_name = builtin_hash[0] %}
+            {% assign tabledata = page.builtInTables[holder] %}
+            <div class="card mb-5">
+                <div id="{{holder | slugify }}" class="card-header">
+                    <strong>{{tabledata.humanName}}</strong>
+                </div>
+                <div class="card-body">
+                    <dl>
+                        {% if tabledata.extends %}
+                        <dt>Extends</dt>
+                        <dd><a href="#{{tabledata.extends|slugify}}">{{tabledata.extends| split:"."|last|split:'$'|last}}</a></dd>
+                        {% endif %}
+                        <dt>Description</dt>
+                        <dd>{{tabledata.description | newline_to_br }}</dd>
+                    </dl>
+                    {% if tabledata.fields %}
+                    <table class="table table-striped table-hover mb-1">
+                        <colgroup>
+                            <col style="width: 30%">
+                            <col style="width: 20%">
+                            <col style="width: 50%">
+                        </colgroup>
+                        <thead>
+                        <tr>
+                            <th scope="col">Field</th>
+                            <th scope="col">Type</th>
+                            <th scope="col">Description</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for field_hash in tabledata.fields %}
+                        {% assign fieldname = field_hash[0] %}
+                        {% assign field = field_hash[1] %}
+                        <tr>
+                            <td>{{fieldname}}</td>
+                            <td>{% include computer_type_link.html subject=field enums=page.enums tables=page.builtInTables %}</td>
+                            <td>{{field.description | newline_to_br}}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                        <small><em>No specific fields for this table.</em></small>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <h2 id="enums" class="mb-3">Fixed String Values</h2>
+        <div class="row">
+            {% assign enumlist = "" %}
+            {%- for enum_hash in page.enums -%}
+            {% assign enum = enum_hash[0] %}
+            {% capture shortname %}{{enum | split:"."|last|split:'$'|last}}{% endcapture %}
+            {% capture enumlist %}{% unless forloop.first %}{{ enumlist }}|{% endunless %}{{ shortname }}:{{ enum }}{% endcapture %}
+            {%- endfor -%}
+            {% assign enumlist = enumlist | split:'|' | sort %}
+
+            {%- for short_colon_full in enumlist -%}
+            {% assign enum_hash = short_colon_full | split:':' %}
+            {% assign enum = enum_hash[1] %}
+            {% assign short_name = enum_hash[0] %}
+            {% assign values = page.enums[enum] %}
+
+            <div class="mb-5 col-md-3">
+                <div class="card">
+                    <div class="card-header" id="{{enum | slugify }}">
+                        {{short_name}}
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        {% assign sortedVals = values | sort %}
+                        {% for val in sortedVals %}
+                        <li class="list-group-item"><code>{{val}}</code></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {%- endfor -%}
+        </div>
+    </div>
+</div>
+
+<!--<script>
+    new bootstrap.ScrollSpy(document.body, {
+        target: '#sideNav'
+    })
+</script>
+<style>
+    body {
+        position: relative;
+    }
+</style>
+-->

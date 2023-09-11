@@ -1,0 +1,31 @@
+{% assign extra = include.subject.javaExtra[0] %}
+{% assign extra2 = include.subject.javaExtra[1] %}
+{% assign builtin = false %}
+{% assign enum = false %}
+
+{% if include.enums[include.subject.javaType] %}
+{% assign enum = include.subject.javaType %}
+{% elsif include.enums[extra] %}
+{% assign enum = extra %}
+{% elsif include.enums[extra2] %}
+{% assign enum = extra2 %}
+{% elsif include.tables[include.subject.javaType] %}
+{% assign builtin = include.subject.javaType %}
+{% elsif include.tables[extra] %}
+{% assign builtin = extra %}
+{% elsif include.tables[extra2] %}
+{% assign builtin = extra2 %}
+{% endif %}
+
+{% if enum %}
+{% assign enumVals = include.enums[enum] | sort %}
+{% capture enumShort %}{{enum | split:"."|last|split:'$'|last}}{% endcapture %}
+{% endif %}
+
+{% if enum %}<a href="#{{ enum | slugify }}"
+                                                   data-bs-toggle="tooltip"
+                                                   data-bs-html="true"
+                                                   title="<strong>{{enumShort}}</strong><hr>{% for value in enumVals %}{{value}}<br>{%endfor%}">{% endif %}
+{% if builtin %}<a href="#{{ builtin | slugify }}">{% endif %}
+{{include.subject.type}}
+{% if enum or builtin %}</a>{% endif %}
